@@ -1,0 +1,6 @@
+{
+  "name": "Mercado Viva - Fresh Food & Goods",
+  "description": "Modern cross-platform artisanal store and pantry. Order fresh food, specialty drinks, and curated goods with seamless mobile checkout and live inventory tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

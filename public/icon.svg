@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="vivaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5722"/>
+      <stop offset="50%" stop-color="#FF7043"/>
+      <stop offset="100%" stop-color="#FFA726"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <!-- Background Tile -->
+  <rect width="512" height="512" rx="128" fill="url(#vivaGrad)"/>
+  
+  <!-- Subtle decorative rings -->
+  <circle cx="256" cy="256" r="210" stroke="white" stroke-opacity="0.15" stroke-width="6"/>
+  <circle cx="256" cy="256" r="160" stroke="white" stroke-opacity="0.1" stroke-width="4"/>
+
+  <!-- Shopping Tote Body -->
+  <g filter="url(#shadow)">
+    <path d="M160 210C160 196.745 170.745 186 184 186H328C341.255 186 352 196.745 352 210L368 376C368 393.673 353.673 408 336 408H176C158.327 408 144 393.673 144 376L160 210Z" fill="#FFFFFF"/>
+    <!-- Handle -->
+    <path d="M208 196V164C208 137.49 229.49 116 256 116C282.51 116 304 137.49 304 164V196" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round"/>
+  </g>
+
+  <!-- Botanical Leaf Accents inside Bag -->
+  <path d="M256 250C256 250 220 270 220 310C220 330 236 346 256 346C276 346 292 330 292 310C292 270 256 250 256 250Z" fill="url(#leafGrad)"/>
+  <path d="M256 258V346" stroke="#A7F3D0" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Sun Sparkle / Fresh Badge -->
+  <circle cx="340" cy="180" r="28" fill="#FBBF24"/>
+  <path d="M340 164V196M324 180H356" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+</svg>

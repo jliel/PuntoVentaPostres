@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrapUninitialized() {
+      return !exists(/databases/$(database)/documents/appConfig/bootstrap);
+    }
+
+    // 3. Validation Helpers
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 30 &&
+             data.price is number && data.price >= 0 &&
+             data.stock is number && data.stock >= 0 &&
+             data.isAvailable is bool &&
+             data.description is string && data.description.size() <= 1000;
+    }
+
+    function isValidOrder(data) {
+      return data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() <= 30 &&
+             data.subtotal is number && data.subtotal >= 0 &&
+             data.total is number && data.total >= 0 &&
+             data.paymentMethod is string && data.paymentMethod.size() > 0 && data.paymentMethod.size() <= 30 &&
+             data.fulfillmentType is string && data.fulfillmentType.size() > 0 && data.fulfillmentType.size() <= 30 &&
+             data.status is string && data.status.size() > 0 && data.status.size() <= 30 &&
+             data.customer is map &&
+             data.customer.name is string && data.customer.name.size() > 0 && data.customer.name.size() <= 120 &&
+             data.customer.phone is string && data.customer.phone.size() > 0 && data.customer.phone.size() <= 30;
+    }
+
+    function isValidRawMaterial(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 30 &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.unit is string && data.unit.size() > 0 && data.unit.size() <= 20;
+    }
+
+    function isValidUser(data, userId) {
+      return data.id == userId &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 120 &&
+             (!('name' in data) || (data.name is string && data.name.size() <= 120)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
+             (isAdmin() || !('role' in data) || data.role == 'customer');
+    }
+
+    function isValidAdminRecord(data, adminId) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+             data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+             data.uid == adminId &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 120 &&
+             data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidBootstrap(data) {
+      return data.keys().hasAll(['initialized', 'initializedAt']) &&
+             data.keys().hasOnly(['initialized', 'initializedAt']) &&
+             data.initialized == true &&
+             data.initializedAt == request.time;
+    }
+
+    // 4. Products Collection (Menu items)
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isValidId(productId) && isValidProduct(incoming()) && (
+        isAdmin() ||
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'totalSold', 'isAvailable']) &&
+          incoming().stock <= existing().stock &&
+          incoming().totalSold >= existing().totalSold
+        )
+      );
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+
+    // 5. Orders Collection (PII protected)
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (
+        isAdmin() ||
+        (isSignedIn() && resource.data.customer.userId == request.auth.uid)
+      );
+      allow list: if isAdmin() || (
+        isSignedIn() && resource.data.customer.userId == request.auth.uid
+      );
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && (
+        (isSignedIn() && (!('userId' in incoming().customer) || incoming().customer.userId == request.auth.uid)) ||
+        (!isSignedIn() && (!('userId' in incoming().customer) || incoming().customer.userId == null))
+      );
+      allow update: if isAdmin() && isValidId(orderId) && isValidOrder(incoming());
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    // 6. Raw Materials Collection (Restaurant Ingredients)
+    match /rawMaterials/{materialId} {
+      allow get: if isAdmin() && isValidId(materialId);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && isValidId(materialId) && isValidRawMaterial(incoming());
+      allow delete: if isAdmin() && isValidId(materialId);
+    }
+
+    // 7. Users Collection (Customer profiles)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) && isVerifiedUser() && (isOwner(userId) || isAdmin()) && isValidUser(incoming(), userId);
+      allow update: if isValidId(userId) && isVerifiedUser() && isValidUser(incoming(), userId) && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'address']) &&
+          incoming().email == existing().email &&
+          (!('role' in existing()) || incoming().role == existing().role)
+        )
+      );
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // 8. Admins Collection (No hardcoded personal email; one-time atomic bootstrap supported)
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(adminId) && isValidAdminRecord(incoming(), adminId) && (
+        isAdmin() ||
+        (
+          isVerifiedUser() &&
+          isOwner(adminId) &&
+          isBootstrapUninitialized() &&
+          existsAfter(/databases/$(database)/documents/appConfig/bootstrap)
+        )
+      );
+      allow update, delete: if isAdmin() && isValidId(adminId);
+    }
+
+    // 9. App Bootstrap Lock (Prevents duplicate admin claims)
+    match /appConfig/{configId} {
+      allow get: if isSignedIn() && configId == 'bootstrap';
+      allow create: if configId == 'bootstrap' &&
+                       isVerifiedUser() &&
+                       isBootstrapUninitialized() &&
+                       isValidBootstrap(incoming()) &&
+                       existsAfter(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow list, update, delete: if false;
+    }
+  }
+}

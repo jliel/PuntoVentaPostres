@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Menu item sold in the store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 120 },
+        "nameEn": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "enum": ["elotes", "hamburguesas", "crepas", "postres"] },
+        "price": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "maxStock": { "type": "number" },
+        "expiryDate": { "type": "string", "maxLength": 30 },
+        "totalSold": { "type": "number" },
+        "description": { "type": "string", "maxLength": 1000 },
+        "descriptionEn": { "type": "string", "maxLength": 1000 },
+        "isAvailable": { "type": "boolean" },
+        "accentColor": { "type": "string", "maxLength": 20 },
+        "iconType": { "type": "string", "maxLength": 30 },
+        "imageUrl": { "type": "string", "maxLength": 2048 },
+        "enhancedImageUrl": { "type": "string", "maxLength": 2048 },
+        "isEnhanced": { "type": "boolean" },
+        "dayRecommendationReason": { "type": "string", "maxLength": 250 },
+        "dayRecommendationReasonEn": { "type": "string", "maxLength": 250 }
+      },
+      "required": ["id", "name", "category", "price", "stock", "isAvailable", "description"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order placed in the store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "orderNumber": { "type": "string", "maxLength": 20 },
+        "subtotal": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "tip": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["apple_pay", "google_pay", "card", "cash"] },
+        "fulfillmentType": { "type": "string", "enum": ["delivery", "pickup"] },
+        "status": { "type": "string", "enum": ["received", "preparing", "ready", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "orderNumber", "subtotal", "total", "paymentMethod", "fulfillmentType", "status"]
+    },
+    "RawMaterial": {
+      "title": "RawMaterial",
+      "description": "Ingredient or packaging supply tracked in the warehouse",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 120 },
+        "nameEn": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "maxLength": 30 },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 20 },
+        "minStock": { "type": "number" },
+        "expiryDate": { "type": "string", "maxLength": 30 },
+        "costPerUnit": { "type": "number" },
+        "supplier": { "type": "string", "maxLength": 120 },
+        "lotNumber": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "name", "category", "quantity", "unit", "expiryDate"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with delivery coordinates and role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 120 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "address": { "type": "string", "maxLength": 300 },
+        "role": { "type": "string", "enum": ["admin", "customer"] },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "email"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Admin authorization mapping document",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "AppBootstrap": {
+      "title": "AppBootstrap",
+      "description": "One-time lock document confirming initial administrator setup",
+      "type": "object",
+      "properties": {
+        "initialized": { "type": "boolean" },
+        "initializedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["initialized", "initializedAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Catalog menu dishes available to browse and order"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer order history and current active orders"
+    },
+    "/rawMaterials/{materialId}": {
+      "schema": "RawMaterial",
+      "description": "Kitchen ingredients and stock inventory with expiration tracking"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Customer and administrator profile settings"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminRecord",
+      "description": "Verified administrative user records"
+    },
+    "/appConfig/{configId}": {
+      "schema": "AppBootstrap",
+      "description": "Singleton bootstrap lock preventing duplicate admin claims"
+    }
+  }
+}

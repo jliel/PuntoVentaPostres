@@ -1,0 +1,42 @@
+# Dependencies & package artifacts
+node_modules/
+
+# Build outputs
+build/
+dist/
+dev-dist/
+coverage/
+
+# OS & logs
+.DS_Store
+*.log
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Environment & local secret files
+.env
+.env.*
+!.env.example
+*.local
+
+# Firebase & Cloud credentials (NEVER commit real project configs or service accounts)
+firebase-applet-config.json
+!firebase-applet-config.example.json
+firebase_applet_config.xml
+google-services.json
+GoogleService-Info.plist
+.firebase/
+*service-account*.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+credentials*.json
+secrets*.json
+
+# Private keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
